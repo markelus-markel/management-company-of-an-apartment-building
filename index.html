@@ -113,6 +113,7 @@
   .btn{all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:var(--radius); font-size:13px; font-weight:500; border:1px solid transparent;}
   .btn-primary{background:var(--accent); color:#fff;}
   .btn-primary:hover{background:#235a51;}
+  .btn-primary:disabled{opacity:.85; cursor:default;}
   .btn-ghost{border-color:var(--line); color:var(--ink);}
   .btn-ghost:hover{background:var(--accent-soft);}
   .btn-ghost:active{background:var(--accent-soft); border-color:var(--accent);}
@@ -724,7 +725,7 @@
     <div class="template-note">Единственный доступный шаблон — «напоминание». Формулировка «претензия» недоступна в этой версии.</div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
-      <button class="btn btn-primary" onclick="closeModal()">Отправить и зафиксировать</button>
+      <button class="btn btn-primary" id="send-notice-btn" onclick="sendNotice(this)">Отправить и зафиксировать</button>
     </div>
   </div>
 </div>
@@ -795,6 +796,18 @@
   });
   function openModal(){document.getElementById('modal-overlay').classList.add('show');}
   function closeModal(){document.getElementById('modal-overlay').classList.remove('show');}
+  function sendNotice(btn){
+    var original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Отправлено ✓';
+    setTimeout(function(){
+      closeModal();
+      setTimeout(function(){
+        btn.textContent = original;
+        btn.disabled = false;
+      }, 300);
+    }, 650);
+  }
 
   function switchTab(name){
     document.querySelectorAll('.auth-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
