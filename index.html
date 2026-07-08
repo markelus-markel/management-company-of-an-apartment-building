@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Управляющая компания МКД — прототип MVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EAEBE4;
+    --paper: #FBFBF8;
+    --ink: #1B2430;
+    --ink-soft: #4B5563;
+    --line: #D6D5C9;
+    --accent: #2B6E63;
+    --accent-soft: #E4EDE9;
+    --brick: #A24A2B;
+    --brick-soft: #F3E2D8;
+    --gold: #A6862C;
+    --gold-soft: #F1E9D2;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans', sans-serif; font-size:14px;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .serif{font-family:'Fraunces', serif;}
+
+  .app{display:grid; grid-template-columns:220px 1fr; min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{background:var(--ink); color:#E9E9E2; padding:24px 0; display:flex; flex-direction:column;}
+  .brand{padding:0 20px 24px 20px; border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:12px;}
+  .brand .mark{width:28px;height:28px;border:1.5px solid #E9E9E2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:11px;margin-bottom:10px;}
+  .brand .name{font-family:'Fraunces',serif; font-size:15px; letter-spacing:.1px; line-height:1.25;}
+  .brand .sub{font-size:11px; color:#B7B8AE; margin-top:2px; letter-spacing:.4px; text-transform:uppercase;}
+  nav{display:flex; flex-direction:column; gap:1px; padding:0 10px;}
+  nav button{
+    all:unset; cursor:pointer; padding:10px 12px; border-radius:var(--radius);
+    font-size:13px; color:#C9CAC0; display:flex; align-items:center; gap:10px;
+  }
+  nav button .num{font-family:'IBM Plex Mono',monospace; font-size:11px; color:#7C7E72; width:16px;}
+  nav button:hover{background:rgba(255,255,255,.06); color:#fff;}
+  nav button.active{background:var(--accent); color:#fff;}
+  nav button.active .num{color:rgba(255,255,255,.7);}
+  .sidebar-footer{margin-top:auto; padding:16px 20px; font-size:11px; color:#7C7E72; border-top:1px solid rgba(255,255,255,.12);}
+
+  /* Main */
+  main{padding:32px 40px; overflow-x:hidden;}
+  .view{display:none;}
+  .view.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .page-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;}
+  .page-title{font-family:'Fraunces',serif; font-size:26px; font-weight:500;}
+  .page-eyebrow{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-soft); margin-bottom:4px;}
+
+  /* Queue table */
+  .table-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);}
+  table{width:100%; border-collapse:collapse;}
+  th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); font-weight:500; padding:12px 16px; border-bottom:1px solid var(--line);}
+  td{padding:13px 16px; border-bottom:1px solid var(--line); font-size:13.5px; vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.row-case{cursor:pointer;}
+  tr.row-case:hover{background:var(--accent-soft);}
+  .case-id{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:12.5px;}
+
+  .status-pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:500; white-space:nowrap;}
+  .dot{width:6px;height:6px;border-radius:50%;}
+  .status-pill.open{background:var(--accent-soft); color:var(--accent);} .status-pill.open .dot{background:var(--accent);}
+  .status-pill.wait{background:var(--gold-soft); color:var(--gold);} .status-pill.wait .dot{background:var(--gold);}
+  .status-pill.block{background:var(--brick-soft); color:var(--brick);} .status-pill.block .dot{background:var(--brick);}
+  .status-pill.done{background:#E4E4DE; color:var(--ink-soft);} .status-pill.done .dot{background:var(--ink-soft);}
+
+  .urgency{font-size:12px;}
+  .urgency.high{color:var(--brick); font-weight:600;}
+
+  /* Case detail */
+  .case-layout{display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:20px;}
+  .card h3{font-family:'Fraunces',serif; font-size:15px; font-weight:500; margin:0 0 14px 0; display:flex; align-items:center; gap:8px;}
+  .card h3 .idx{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); border:1px solid var(--line); border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center;}
+
+  .case-header-row{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;}
+  .case-address{color:var(--ink-soft); font-size:13px;}
+
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .fchip{border:1px solid var(--line); border-radius:var(--radius); padding:9px 12px; min-width:135px; background:#fff;}
+  .fchip .flabel{font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); margin-bottom:4px;}
+  .fchip .fname{font-size:13px; font-weight:500;}
+  .fchip.empty{border-style:dashed; color:var(--ink-soft);}
+  .fchip.empty .fname{color:var(--ink-soft); font-weight:400; font-style:italic;}
+  .fchip.overlap{background:var(--gold-soft); border-color:var(--gold);}
+
+  .note-flag{margin-top:12px; border-left:3px solid var(--gold); background:var(--gold-soft); padding:10px 12px; font-size:12.5px; color:#5c4a12; border-radius:0 var(--radius) var(--radius) 0;}
+
+  .timeline{position:relative; padding-left:18px;}
+  .timeline::before{content:"";position:absolute; left:4px; top:4px; bottom:4px; width:1px; background:var(--line);}
+  .tl-item{position:relative; padding-bottom:16px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-item::before{content:""; position:absolute; left:-18px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--accent); border:2px solid var(--paper);}
+  .tl-time{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);}
+  .tl-text{font-size:13px; margin-top:2px;}
+
+  .checklist-item{display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .checklist-item:last-child{border-bottom:none;}
+  .check-mark{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--line); flex-shrink:0; margin-top:1px; display:flex;align-items:center;justify-content:center; font-size:11px;}
+  .check-mark.done{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .check-mark.missing{border-color:var(--brick); color:var(--brick);}
+  .ci-title{font-size:13px;}
+  .ci-sub{font-size:11.5px; color:var(--ink-soft);}
+
+  .btn{all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:var(--radius); font-size:13px; font-weight:500; border:1px solid transparent;}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-primary:hover{background:#235a51;}
+  .btn-ghost{border-color:var(--line); color:var(--ink);}
+  .btn-ghost:hover{background:var(--accent-soft);}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+
+  .role-note{font-size:11.5px; color:var(--ink-soft); margin-top:10px; border-top:1px dashed var(--line); padding-top:10px;}
+
+  /* Collection dashboard */
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px;}
+  .stat{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+  .stat .n{font-family:'Fraunces',serif; font-size:26px;}
+  .stat .l{font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); margin-top:4px;}
+
+  .debt-amount{font-family:'IBM Plex Mono',monospace; font-weight:500;}
+  .debt-amount.high{color:var(--brick);}
+
+  /* Modal */
+  .overlay{display:none; position:fixed; inset:0; background:rgba(27,36,48,.45); align-items:center; justify-content:center; z-index:50;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--paper); width:460px; max-width:90vw; border-radius:var(--radius); padding:26px; border:1px solid var(--line);}
+  .modal h4{font-family:'Fraunces',serif; font-size:17px; margin:0 0 4px 0;}
+  .modal .m-sub{font-size:12px; color:var(--ink-soft); margin-bottom:16px;}
+  .modal textarea{width:100%; min-height:100px; border:1px solid var(--line); border-radius:var(--radius); padding:10px; font-family:'IBM Plex Sans',sans-serif; font-size:13px; resize:vertical; background:#fff; color:var(--ink);}
+  .template-note{font-size:11px; color:var(--ink-soft); margin-top:6px; margin-bottom:16px; font-style:italic;}
+  .modal .btn-row{justify-content:flex-end;}
+
+  .seal{position:absolute; top:18px; right:18px; width:56px; height:56px; border:2px solid var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; transform:rotate(-8deg); opacity:.85;}
+  .seal span{font-family:'Fraunces',serif; font-size:9px; color:var(--accent); text-align:center; text-transform:uppercase; letter-spacing:.4px; line-height:1.2;}
+  .card.relative{position:relative;}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:flex; flex-direction:row; overflow-x:auto; padding:12px;}
+    .case-layout{grid-template-columns:1fr;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+  }
+
+  /* ===== Auth gate ===== */
+  .auth-screen{
+    position:fixed; inset:0; z-index:100; background:var(--ink);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .auth-screen.hidden{display:none;}
+  .auth-box{background:var(--paper); width:400px; max-width:100%; border-radius:var(--radius); padding:32px 30px; position:relative;}
+  .auth-mark{width:36px;height:36px;border:1.5px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:13px;margin-bottom:16px;}
+  .auth-title{font-family:'Fraunces',serif; font-size:19px; margin-bottom:4px; line-height:1.25;}
+  .auth-sub{font-size:12.5px; color:var(--ink-soft); margin-bottom:22px;}
+  .auth-tabs{display:flex; gap:4px; background:var(--bg); border-radius:var(--radius); padding:3px; margin-bottom:20px;}
+  .auth-tab{all:unset; cursor:pointer; flex:1; text-align:center; padding:8px; font-size:12.5px; font-weight:500; border-radius:2px; color:var(--ink-soft);}
+  .auth-tab.active{background:var(--paper); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08);}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); margin-bottom:5px;}
+  .field input, .field select{width:100%; border:1px solid var(--line); border-radius:var(--radius); padding:9px 11px; font-family:'IBM Plex Sans',sans-serif; font-size:13px; background:#fff; color:var(--ink);}
+  .field input:focus, .field select:focus, textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .auth-form{display:none;}
+  .auth-form.active{display:block;}
+  .auth-submit{width:100%; justify-content:center; margin-top:6px;}
+  .auth-foot{font-size:11.5px; color:var(--ink-soft); margin-top:16px; text-align:center;}
+
+  /* ===== Company profile ===== */
+  .profile-grid{display:grid; grid-template-columns:1.4fr 1fr; gap:20px; align-items:start;}
+  .kv{display:grid; grid-template-columns:120px 1fr; gap:6px 12px; font-size:13px;}
+  .kv .k{color:var(--ink-soft); font-size:12px;}
+  .kv .v{font-weight:500;}
+  .social-row{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+  .social-chip{border:1px solid var(--line); border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ink-soft); background:#fff;}
+  .director-row{display:flex; align-items:center; gap:14px;}
+  .avatar{width:48px;height:48px;border-radius:50%;background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:18px; flex-shrink:0;}
+  .form-tag{display:inline-block; font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; padding:2px 8px; border-radius:10px; background:var(--accent-soft); color:var(--accent); font-weight:600;}
+  .form-tag.pt{background:var(--gold-soft); color:var(--gold);}
+
+  /* ===== Provider cards (monopolists / service suppliers) ===== */
+  .provider-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;}
+  .provider-row{display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line);}
+  .provider-row:last-child{border-bottom:none;}
+  .provider-icon{width:38px; height:38px; border-radius:50%; background:var(--bg); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:15px; color:var(--ink-soft); flex-shrink:0;}
+  .provider-info{flex:1; min-width:0;}
+  .provider-name{font-size:13.5px; font-weight:500;}
+  .provider-meta{font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+  .provider-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .btn-icon{all:unset; cursor:pointer; padding:6px 12px; border-radius:var(--radius); font-size:12px; border:1px solid var(--line); color:var(--ink);}
+  .btn-icon:hover{background:var(--accent-soft); border-color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-mark">УК</div>
+    <div class="auth-title">Управляющая компания МКД</div>
+    <div class="auth-sub">Вход для управляющей компании</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Вход</button>
+      <button class="auth-tab" data-tab="register">Регистрация</button>
+    </div>
+
+    <form class="auth-form active" id="form-login" onsubmit="return doLogin(event)">
+      <div class="field"><label>Телефон или email</label><input type="text" placeholder="+7 701 987 65 43" required></div>
+      <div class="field"><label>Пароль</label><input type="password" placeholder="••••••••" required></div>
+      <button class="btn btn-primary auth-submit" type="submit">Войти</button>
+      <div class="auth-foot">Нет аккаунта? <a href="#" onclick="switchTab('register'); return false;" style="color:var(--accent);">Зарегистрировать компанию</a></div>
+    </form>
+
+    <form class="auth-form" id="form-register" onsubmit="return doLogin(event)">
+      <div class="field"><label>Название компании</label><input type="text" placeholder="ТОО «УК Северный Дом»" required></div>
+      <div class="field"><label>БИН</label><input type="text" placeholder="123456789012" required></div>
+      <div class="field"><label>ФИО руководителя</label><input type="text" placeholder="Асель Т. Мукатова" required></div>
+      <div class="field"><label>Телефон руководителя</label><input type="text" placeholder="+7 701 987 65 43" required></div>
+      <div class="field"><label>Email</label><input type="email" placeholder="info@company.kz" required></div>
+      <div class="field"><label>Пароль</label><input type="password" placeholder="••••••••" required></div>
+      <button class="btn btn-primary auth-submit" type="submit">Создать аккаунт</button>
+      <div class="auth-foot">Уже есть аккаунт? <a href="#" onclick="switchTab('login'); return false;" style="color:var(--accent);">Войти</a></div>
+    </form>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">УК</div>
+      <div class="name">Управляющая компания МКД</div>
+      <div class="sub">Input-компонент · УК</div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-view="company"><span class="num">00</span>Компания</button>
+      <button class="nav-btn" data-view="queue"><span class="num">01</span>Очередь кейсов</button>
+      <button class="nav-btn" data-view="detail"><span class="num">02</span>Кейс #0148</button>
+      <button class="nav-btn" data-view="intake"><span class="num">03</span>Новая заявка</button>
+      <button class="nav-btn" data-view="collection"><span class="num">04</span>Взыскание долгов</button>
+    </nav>
+    <div class="sidebar-footer">MVP v0.2 · без мандатов и AJAU AI</div>
+  </aside>
+
+  <main>
+
+    <!-- VIEW: COMPANY (главная) -->
+    <section class="view active" id="view-company">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Главная</div>
+          <div class="page-title">Профиль управляющей компании</div>
+        </div>
+      </div>
+
+      <div class="profile-grid">
+        <div class="card">
+          <h3><span class="idx">К</span>Управляющая компания</h3>
+          <div class="kv">
+            <div class="k">Название</div><div class="v">ТОО «УК Северный Дом»</div>
+            <div class="k">БИН</div><div class="v mono">123456789012</div>
+            <div class="k">Адрес</div><div class="v">г. Семей, ул. Мира 22, оф. 4</div>
+            <div class="k">Телефон</div><div class="v mono">+7 705 123 45 67</div>
+            <div class="k">Email</div><div class="v">info@uk-severny.kz</div>
+          </div>
+          <div class="social-row">
+            <span class="social-chip">Instagram: @uk_severny</span>
+            <span class="social-chip">WhatsApp-канал</span>
+            <span class="social-chip">2ГИС</span>
+          </div>
+          <div class="btn-row"><button class="btn btn-ghost" onclick="openCompanyEdit()">Редактировать</button></div>
+        </div>
+
+        <div class="card">
+          <h3><span class="idx">Р</span>Руководитель</h3>
+          <div class="director-row">
+            <div class="avatar">А</div>
+            <div>
+              <div style="font-weight:500; font-size:14px;">Асель Т. Мукатова</div>
+              <div class="ci-sub">Директор ТОО «УК Северный Дом»</div>
+            </div>
+          </div>
+          <div class="kv" style="margin-top:14px;">
+            <div class="k">Телефон</div><div class="v mono">+7 701 987 65 43</div>
+            <div class="k">WhatsApp</div><div class="v mono">+7 701 987 65 43</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3><span class="idx">Д</span>Дома под управлением</h3>
+        <div class="table-card" style="border:none;">
+          <table>
+            <thead><tr><th>Адрес</th><th>Квартир</th><th>Форма управления</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>ул. Абая 14, ЖК «Северный»</td>
+                <td class="mono">96</td>
+                <td><span class="form-tag">ОСИ</span></td>
+              </tr>
+              <tr>
+                <td>ул. Мира 8</td>
+                <td class="mono">64</td>
+                <td><span class="form-tag pt">ПТ</span></td>
+              </tr>
+              <tr>
+                <td>пр. Шакарима 51</td>
+                <td class="mono">140</td>
+                <td><span class="form-tag">ОСИ</span></td>
+              </tr>
+              <tr>
+                <td>ул. Кабанбай батыра 3</td>
+                <td class="mono">72</td>
+                <td><span class="form-tag pt">ПТ</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="btn-row"><button class="btn btn-primary">+ Добавить дом</button></div>
+      </div>
+
+      <div class="provider-grid" style="margin-top:20px;">
+        <div class="card">
+          <h3><span class="idx">М</span>Естественные монополисты</h3>
+          <div class="provider-row">
+            <div class="provider-icon">В</div>
+            <div class="provider-info">
+              <div class="provider-name">Водоканал</div>
+              <div class="provider-meta">Договор № 4471-В · +7 700 200 10 10</div>
+            </div>
+            <div class="provider-actions">
+              <span class="status-pill open"><span class="dot"></span>Активен</span>
+              <button class="btn-icon" onclick="openProviderEdit('Водоканал')">Изменить</button>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="provider-icon">Э</div>
+            <div class="provider-info">
+              <div class="provider-name">Электросбыт</div>
+              <div class="provider-meta">Договор № 2290-Э · +7 700 200 20 20</div>
+            </div>
+            <div class="provider-actions">
+              <span class="status-pill open"><span class="dot"></span>Активен</span>
+              <button class="btn-icon" onclick="openProviderEdit('Электросбыт')">Изменить</button>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="provider-icon">Т</div>
+            <div class="provider-info">
+              <div class="provider-name">Теплокоммунэнерго</div>
+              <div class="provider-meta">Договор № 1187-Т · истекает 30.09.2026</div>
+            </div>
+            <div class="provider-actions">
+              <span class="status-pill wait"><span class="dot"></span>Истекает</span>
+              <button class="btn-icon" onclick="openProviderEdit('Теплокоммунэнерго')">Изменить</button>
+            </div>
+          </div>
+          <div class="btn-row"><button class="btn btn-ghost" onclick="openProviderEdit('Новый монополист')">+ Добавить монополиста</button></div>
+        </div>
+
+        <div class="card">
+          <h3><span class="idx">У</span>Поставщики услуг</h3>
+          <div class="provider-row">
+            <div class="provider-icon">Г</div>
+            <div class="provider-info">
+              <div class="provider-name">Горочистка</div>
+              <div class="provider-meta">ИП Сериков · вывоз ТБО, ежедневно</div>
+            </div>
+            <div class="provider-actions">
+              <span class="status-pill open"><span class="dot"></span>Активен</span>
+              <button class="btn-icon" onclick="openProviderEdit('Горочистка')">Изменить</button>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="provider-icon">Л</div>
+            <div class="provider-info">
+              <div class="provider-name">Лифт-сервис</div>
+              <div class="provider-meta">ТОО «ЛифтСервис-Семей» · обслуживание, ТО ежемесячно</div>
+            </div>
+            <div class="provider-actions">
+              <span class="status-pill open"><span class="dot"></span>Активен</span>
+              <button class="btn-icon" onclick="openProviderEdit('Лифт-сервис')">Изменить</button>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="provider-icon">С</div>
+            <div class="provider-info">
+              <div class="provider-name">СЭС, фумигация</div>
+              <div class="provider-meta">Дезслужба «Чистый дом» · плановая обработка, квартально</div>
+            </div>
+            <div class="provider-actions">
+              <span class="status-pill block"><span class="dot"></span>Договор не загружен</span>
+              <button class="btn-icon" onclick="openProviderEdit('СЭС, фумигация')">Изменить</button>
+            </div>
+          </div>
+          <div class="btn-row"><button class="btn btn-ghost" onclick="openProviderEdit('Новый поставщик')">+ Добавить поставщика</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: QUEUE -->
+    <section class="view" id="view-queue">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">ЖК «Северный», ул. Абая 14</div>
+          <div class="page-title">Очередь кейсов</div>
+        </div>
+        <button class="btn btn-primary" onclick="showView('intake')">+ Новая заявка</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>ID</th><th>Категория</th><th>Статус</th><th>Срочность</th><th>Исполнитель</th><th>Обновлено</th></tr></thead>
+          <tbody>
+            <tr class="row-case" onclick="showView('detail')">
+              <td class="case-id">#0148</td>
+              <td>Протечка кровли, подъезд 2</td>
+              <td><span class="status-pill wait"><span class="dot"></span>Требуется решение</span></td>
+              <td class="urgency high">Высокая</td>
+              <td>—</td>
+              <td class="mono">08.07, 09:14</td>
+            </tr>
+            <tr class="row-case">
+              <td class="case-id">#0146</td>
+              <td>Замена насоса, ИТП</td>
+              <td><span class="status-pill open"><span class="dot"></span>Исполнение</span></td>
+              <td class="urgency">Обычная</td>
+              <td>ТОО «СервисПлюс»</td>
+              <td class="mono">07.07, 18:02</td>
+            </tr>
+            <tr class="row-case">
+              <td class="case-id">#0142</td>
+              <td>Плановый осмотр фасада</td>
+              <td><span class="status-pill block"><span class="dot"></span>Нет доказательств</span></td>
+              <td class="urgency">Плановая</td>
+              <td>Инспектор А. Ким</td>
+              <td class="mono">06.07, 11:40</td>
+            </tr>
+            <tr class="row-case">
+              <td class="case-id">#0139</td>
+              <td>Финансовый вопрос: смета лифта</td>
+              <td><span class="status-pill wait"><span class="dot"></span>На проверке</span></td>
+              <td class="urgency">Обычная</td>
+              <td>—</td>
+              <td class="mono">05.07, 15:20</td>
+            </tr>
+            <tr class="row-case">
+              <td class="case-id">#0133</td>
+              <td>Не работает домофон, подъезд 1</td>
+              <td><span class="status-pill done"><span class="dot"></span>Закрыт</span></td>
+              <td class="urgency">Обычная</td>
+              <td>ИП Ахметов</td>
+              <td class="mono">01.07, 10:05</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW: DETAIL -->
+    <section class="view" id="view-detail">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Дефект / авария</div>
+          <div class="page-title">Кейс #0148 — Протечка кровли, подъезд 2</div>
+          <div class="case-address">ЖК «Северный», ул. Абая 14 · заявитель: Ж. Нурланова, кв. 34</div>
+        </div>
+        <span class="status-pill wait"><span class="dot"></span>Требуется решение</span>
+      </div>
+
+      <div class="case-layout">
+        <div>
+          <div class="card">
+            <h3><span class="idx">7</span>Функциональные роли по кейсу</h3>
+            <div class="chip-row">
+              <div class="fchip"><div class="flabel">Заявитель</div><div class="fname">Ж. Нурланова</div></div>
+              <div class="fchip"><div class="flabel">Инспектор</div><div class="fname">А. Ким</div></div>
+              <div class="fchip empty"><div class="flabel">Решающий</div><div class="fname">не назначен</div></div>
+              <div class="fchip empty"><div class="flabel">Контролёр денег</div><div class="fname">не назначен</div></div>
+              <div class="fchip overlap"><div class="flabel">Исполнитель</div><div class="fname">ТОО «СервисПлюс»</div></div>
+              <div class="fchip overlap"><div class="flabel">Верификатор</div><div class="fname">ТОО «СервисПлюс»</div></div>
+              <div class="fchip empty"><div class="flabel">Получатель отчёта</div><div class="fname">не назначен</div></div>
+            </div>
+            <div class="note-flag">Исполнитель и верификатор — один и тот же пользователь. Это информационная пометка, действие не заблокировано.</div>
+          </div>
+
+          <div class="card">
+            <h3><span class="idx">↻</span>Хронология</h3>
+            <div class="timeline">
+              <div class="tl-item"><div class="tl-time">08.07 09:14</div><div class="tl-text">Заявка подана Ж. Нурлановой, добавлено 2 фото</div></div>
+              <div class="tl-item"><div class="tl-time">08.07 10:02</div><div class="tl-text">Диспетчер перевёл в статус «Требуется осмотр»</div></div>
+              <div class="tl-item"><div class="tl-time">08.07 15:30</div><div class="tl-text">Инспектор А. Ким загрузил акт осмотра</div></div>
+              <div class="tl-item"><div class="tl-time">08.07 15:31</div><div class="tl-text">Статус изменён: требуется решение</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3><span class="idx">✓</span>Доказательства по стадии</h3>
+            <div class="checklist-item"><div class="check-mark done">✓</div><div><div class="ci-title">Описание и локация</div><div class="ci-sub">Заполнено при подаче</div></div></div>
+            <div class="checklist-item"><div class="check-mark done">✓</div><div><div class="ci-title">Фото/видео заявителя</div><div class="ci-sub">2 файла</div></div></div>
+            <div class="checklist-item"><div class="check-mark done">✓</div><div><div class="ci-title">Акт осмотра</div><div class="ci-sub">Загружен инспектором</div></div></div>
+            <div class="checklist-item"><div class="check-mark missing">!</div><div><div class="ci-title">Текст решения</div><div class="ci-sub">Требуется для перехода дальше</div></div></div>
+            <div class="checklist-item"><div class="check-mark missing">!</div><div><div class="ci-title">Финансовая метка (если требуется)</div><div class="ci-sub">Не заполнено</div></div></div>
+            <div class="btn-row">
+              <button class="btn btn-primary">Внести решение</button>
+              <button class="btn btn-ghost">Отменить кейс</button>
+            </div>
+            <div class="role-note">Доступность действий определяется ролью текущего пользователя. Проверки мандата нет.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: INTAKE -->
+    <section class="view" id="view-intake">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Приём заявки</div>
+          <div class="page-title">Новая заявка</div>
+        </div>
+      </div>
+      <div class="card" style="max-width:640px;">
+        <h3><span class="idx">i</span>Основные данные</h3>
+        <div style="display:grid; gap:14px;">
+          <div>
+            <div class="ci-sub" style="margin-bottom:5px;">Здание</div>
+            <div style="border:1px solid var(--line); border-radius:3px; padding:10px 12px; background:#fff;">ЖК «Северный», ул. Абая 14</div>
+          </div>
+          <div>
+            <div class="ci-sub" style="margin-bottom:5px;">Категория</div>
+            <div style="border:1px solid var(--line); border-radius:3px; padding:10px 12px; background:#fff;">Дефект / авария</div>
+          </div>
+          <div>
+            <div class="ci-sub" style="margin-bottom:5px;">Локация</div>
+            <div style="border:1px solid var(--line); border-radius:3px; padding:10px 12px; background:#fff;">Подъезд 2, кровля</div>
+          </div>
+          <div>
+            <div class="ci-sub" style="margin-bottom:5px;">Описание</div>
+            <textarea style="width:100%; min-height:80px; border:1px solid var(--line); border-radius:3px; padding:10px; font-family:'IBM Plex Sans'; font-size:13px;" placeholder="Опишите проблему..."></textarea>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="showView('queue')">Отправить заявку</button>
+          <button class="btn btn-ghost">Сохранить черновик</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: COLLECTION -->
+    <section class="view" id="view-collection">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">ЖК «Северный», ул. Абая 14</div>
+          <div class="page-title">Взыскание долгов</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="n mono">4.2 млн</div><div class="l">Начислено, июнь</div></div>
+        <div class="stat"><div class="n mono">3.6 млн</div><div class="l">Собрано, июнь</div></div>
+        <div class="stat"><div class="n mono">86%</div><div class="l">Сбор</div></div>
+        <div class="stat"><div class="n mono">14</div><div class="l">Должников</div></div>
+      </div>
+
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Лицевой счёт</th><th>Собственник</th><th>Сумма долга</th><th>Просрочка</th><th>Статус</th><th>Действие</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="case-id">ЛС-0034</td><td>Ж. Нурланова, кв. 34</td>
+              <td class="debt-amount high">145 000 ₸</td><td>62 дня</td>
+              <td><span class="status-pill block"><span class="dot"></span>Спор</span></td>
+              <td><button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;" onclick="openModal()">Напомнить</button></td>
+            </tr>
+            <tr>
+              <td class="case-id">ЛС-0071</td><td>С. Ахметов, кв. 71</td>
+              <td class="debt-amount">62 000 ₸</td><td>31 день</td>
+              <td><span class="status-pill wait"><span class="dot"></span>Просрочка</span></td>
+              <td><button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;" onclick="openModal()">Напомнить</button></td>
+            </tr>
+            <tr>
+              <td class="case-id">ЛС-0012</td><td>ТОО «Витраж» (нежилое)</td>
+              <td class="debt-amount high">310 000 ₸</td><td>94 дня</td>
+              <td><span class="status-pill block"><span class="dot"></span>Эскалирован</span></td>
+              <td><button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;">В кейс #0139</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL: pre-trial notice -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <h4>Отправить напоминание</h4>
+    <div class="m-sub">ЛС-0034 · Ж. Нурланова · долг 145 000 ₸ · просрочка 62 дня</div>
+    <textarea readonly>Уважаемая(ый) Ж. Нурланова,
+
+По лицевому счёту ЛС-0034 числится задолженность в размере 145 000 ₸.
+Просьба урегулировать задолженность в досудебном порядке в течение 10 рабочих дней.
+
+С уважением,
+Управляющая компания</textarea>
+    <div class="template-note">Единственный доступный шаблон — «напоминание». Формулировка «претензия» недоступна в этой версии.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="closeModal()">Отправить и зафиксировать</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: edit company profile -->
+<div class="overlay" id="modal-company-overlay">
+  <div class="modal">
+    <h4>Редактировать компанию</h4>
+    <div class="m-sub">Основные метрики профиля управляющей компании</div>
+    <div class="field"><label>Название</label><input type="text" value="ТОО «УК Северный Дом»"></div>
+    <div class="field"><label>БИН</label><input type="text" value="123456789012"></div>
+    <div class="field"><label>Адрес</label><input type="text" value="г. Семей, ул. Мира 22, оф. 4"></div>
+    <div class="field"><label>Телефон</label><input type="text" value="+7 705 123 45 67"></div>
+    <div class="field"><label>Email</label><input type="email" value="info@uk-severny.kz"></div>
+    <div class="field"><label>Соцсети / каналы</label><input type="text" value="Instagram @uk_severny, WhatsApp-канал, 2ГИС"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeCompanyModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="closeCompanyModal()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: edit provider (monopolist / service supplier) -->
+<div class="overlay" id="modal-provider-overlay">
+  <div class="modal">
+    <h4 id="provider-modal-title">Редактировать поставщика</h4>
+    <div class="m-sub">Контактные данные и договор</div>
+    <div class="field"><label>Организация</label><input type="text" id="provider-name-input" value=""></div>
+    <div class="field"><label>Контактное лицо / телефон</label><input type="text" placeholder="+7 700 000 00 00"></div>
+    <div class="field"><label>Номер договора</label><input type="text" placeholder="№ —"></div>
+    <div class="field"><label>Действителен до</label><input type="text" placeholder="дд.мм.гггг"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeProviderModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="closeProviderModal()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showView(name){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+name).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.nav-btn[data-view="'+name+'"]').classList.add('active');
+  }
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>showView(btn.dataset.view));
+  });
+  function openModal(){document.getElementById('modal-overlay').classList.add('show');}
+  function closeModal(){document.getElementById('modal-overlay').classList.remove('show');}
+
+  function switchTab(name){
+    document.querySelectorAll('.auth-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    document.getElementById('form-login').classList.toggle('active', name==='login');
+    document.getElementById('form-register').classList.toggle('active', name==='register');
+  }
+  document.querySelectorAll('.auth-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>switchTab(tab.dataset.tab));
+  });
+  function doLogin(e){
+    e.preventDefault();
+    document.getElementById('auth-screen').classList.add('hidden');
+    showView('company');
+    return false;
+  }
+
+  function openCompanyEdit(){document.getElementById('modal-company-overlay').classList.add('show');}
+  function closeCompanyModal(){document.getElementById('modal-company-overlay').classList.remove('show');}
+
+  function openProviderEdit(name){
+    document.getElementById('provider-modal-title').textContent = 'Редактировать: ' + name;
+    document.getElementById('provider-name-input').value = name;
+    document.getElementById('modal-provider-overlay').classList.add('show');
+  }
+  function closeProviderModal(){document.getElementById('modal-provider-overlay').classList.remove('show');}
+</script>
+</body>
+</html>
