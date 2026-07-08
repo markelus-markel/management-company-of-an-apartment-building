@@ -56,7 +56,7 @@
   .page-eyebrow{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-soft); margin-bottom:4px;}
 
   /* Queue table */
-  .table-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);}
+  .table-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto;}
   table{width:100%; border-collapse:collapse;}
   th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); font-weight:500; padding:12px 16px; border-bottom:1px solid var(--line);}
   td{padding:13px 16px; border-bottom:1px solid var(--line); font-size:13.5px; vertical-align:middle;}
@@ -143,10 +143,30 @@
   .card.relative{position:relative;}
 
   @media (max-width:900px){
-    .app{grid-template-columns:1fr;}
-    .sidebar{display:flex; flex-direction:row; overflow-x:auto; padding:12px;}
+    .app{grid-template-columns:1fr; grid-template-rows:auto 1fr;}
+    .sidebar{
+      flex-direction:row; align-items:center; padding:10px 0; gap:0;
+      position:sticky; top:0; z-index:20; width:100%;
+    }
+    .brand{
+      border-bottom:none; border-right:1px solid rgba(255,255,255,.12);
+      padding:0 14px; margin:0; display:flex; align-items:center; gap:8px; flex-shrink:0;
+    }
+    .brand .mark{margin-bottom:0;}
+    .brand .name{font-size:12.5px; line-height:1.15; white-space:nowrap;}
+    .brand .sub{display:none;}
+    nav{
+      flex-direction:row; padding:0 10px; gap:6px; overflow-x:auto; flex-wrap:nowrap;
+      -webkit-overflow-scrolling:touch; scrollbar-width:thin;
+    }
+    nav::-webkit-scrollbar{height:4px;}
+    nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2); border-radius:4px;}
+    nav button{white-space:nowrap; padding:8px 12px; flex-shrink:0;}
+    .sidebar-footer{display:none;}
+    main{padding:20px 16px;}
     .case-layout{grid-template-columns:1fr;}
     .stat-row{grid-template-columns:repeat(2,1fr);}
+    .profile-grid, .provider-grid{grid-template-columns:1fr;}
   }
 
   /* ===== Auth gate ===== */
@@ -177,7 +197,8 @@
   .kv .k{color:var(--ink-soft); font-size:12px;}
   .kv .v{font-weight:500;}
   .social-row{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
-  .social-chip{border:1px solid var(--line); border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ink-soft); background:#fff;}
+  .social-chip{border:1px solid var(--line); border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ink-soft); background:#fff; text-decoration:none; display:inline-flex; cursor:pointer; transition:background .15s, border-color .15s, color .15s;}
+  .social-chip:hover{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
   .director-row{display:flex; align-items:center; gap:14px;}
   .avatar{width:48px;height:48px;border-radius:50%;background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:18px; flex-shrink:0;}
   .form-tag{display:inline-block; font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; padding:2px 8px; border-radius:10px; background:var(--accent-soft); color:var(--accent); font-weight:600;}
@@ -242,7 +263,7 @@
       <button class="nav-btn" data-view="queue"><span class="num">01</span>Очередь кейсов</button>
       <button class="nav-btn" data-view="detail"><span class="num">02</span>Кейс #0148</button>
       <button class="nav-btn" data-view="intake"><span class="num">03</span>Новая заявка</button>
-      <button class="nav-btn" data-view="collection"><span class="num">04</span>Взыскание долгов</button>
+      <button class="nav-btn" data-view="collection"><span class="num">04</span>Реестр задолжников</button>
     </nav>
     <div class="sidebar-footer">MVP v0.2 · без мандатов и AJAU AI</div>
   </aside>
@@ -269,9 +290,9 @@
             <div class="k">Email</div><div class="v">info@uk-severny.kz</div>
           </div>
           <div class="social-row">
-            <span class="social-chip">Instagram: @uk_severny</span>
-            <span class="social-chip">WhatsApp-канал</span>
-            <span class="social-chip">2ГИС</span>
+            <a class="social-chip" href="https://instagram.com/uk_severny" target="_blank" rel="noopener">Instagram: @uk_severny</a>
+            <a class="social-chip" href="https://wa.me/77051234567" target="_blank" rel="noopener">WhatsApp-канал</a>
+            <a class="social-chip" href="https://2gis.kz" target="_blank" rel="noopener">2ГИС</a>
           </div>
           <div class="btn-row"><button class="btn btn-ghost" onclick="openCompanyEdit()">Редактировать</button></div>
         </div>
@@ -557,7 +578,7 @@
       <div class="page-head">
         <div>
           <div class="page-eyebrow">ЖК «Северный», ул. Абая 14</div>
-          <div class="page-title">Взыскание долгов</div>
+          <div class="page-title">Реестр задолжников</div>
         </div>
       </div>
 
@@ -570,22 +591,28 @@
 
       <div class="table-card">
         <table>
-          <thead><tr><th>Лицевой счёт</th><th>Собственник</th><th>Сумма долга</th><th>Просрочка</th><th>Статус</th><th>Действие</th></tr></thead>
+          <thead><tr><th>Лицевой счёт</th><th>Дом</th><th>Кв.</th><th>Собственник</th><th>Сумма долга</th><th>Просрочка</th><th>Статус</th><th>Действие</th></tr></thead>
           <tbody>
             <tr>
-              <td class="case-id">ЛС-0034</td><td>Ж. Нурланова, кв. 34</td>
+              <td class="case-id">ЛС-0034</td>
+              <td>ул. Абая 14</td><td class="mono">34</td>
+              <td>Ж. Нурланова</td>
               <td class="debt-amount high">145 000 ₸</td><td>62 дня</td>
               <td><span class="status-pill block"><span class="dot"></span>Спор</span></td>
               <td><button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;" onclick="openModal()">Напомнить</button></td>
             </tr>
             <tr>
-              <td class="case-id">ЛС-0071</td><td>С. Ахметов, кв. 71</td>
+              <td class="case-id">ЛС-0071</td>
+              <td>ул. Абая 14</td><td class="mono">71</td>
+              <td>С. Ахметов</td>
               <td class="debt-amount">62 000 ₸</td><td>31 день</td>
               <td><span class="status-pill wait"><span class="dot"></span>Просрочка</span></td>
               <td><button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;" onclick="openModal()">Напомнить</button></td>
             </tr>
             <tr>
-              <td class="case-id">ЛС-0012</td><td>ТОО «Витраж» (нежилое)</td>
+              <td class="case-id">ЛС-0012</td>
+              <td>ул. Мира 8</td><td class="mono">—</td>
+              <td>ТОО «Витраж» (нежилое)</td>
               <td class="debt-amount high">310 000 ₸</td><td>94 дня</td>
               <td><span class="status-pill block"><span class="dot"></span>Эскалирован</span></td>
               <td><button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;">В кейс #0139</button></td>
